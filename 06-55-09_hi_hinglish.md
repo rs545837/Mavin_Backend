@@ -1,0 +1,5 @@
+namaste! mujhe aapse baat karke bahut khushi ho rahi hai. kisi bhi vishay ya kaam ke baare mein baat karne mein mujhe prasannata hogi jis par aap charcha karna chaahte hain. ek AI sahayak ke roop mein, mere paas kai vishayon ka vyaapak gyaan hai, isliye aapke man mein jo bhi ho use saamne laane mein sankoch na karein.
+
+hamaari baatcheet ka poora laabh uthaane ke liye, yah bahut achchha hoga yadi aap kuchh aur sandarbh ya vivaran prastut kar sakein ki vishesh roop se aap kis ke baare mein baat karna ya sahayta prapt karna chaahte hain. yah mujhe aapke liye yathaasambhav prasangik aur sahaayak javaab dene ki anumati dega.
+
+main ek rochak charcha mein utarne ke liye utsuk hoon! kripaya aage badhe aur mujhe batayen ki aapke dimag mein kya chal raha hai. main aapko antardrashtipoorn aur moolyvaan pratikriya dene ka poora prayaas karoonga.
