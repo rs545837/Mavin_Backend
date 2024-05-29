@@ -1,1 +1,0 @@
-Namaste! Mujhe aapse milkar bahut khushi hui. Main theek hoon, puchne ke liye dhanyavaad. Aaj aap kaise hain? Kripaya mujhe batayen ki kya aapke koi sawal hain ya main kis tarah se aapki sahayata kar sakta hoon. Main aapki madad karne ke liye yahan hoon.

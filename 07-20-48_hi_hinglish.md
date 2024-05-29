@@ -1,1 +1,0 @@
-Mujhe maaf kijiye, aapne mujhe koi anuvad karne ke liye hindi paath nahi diya hai. Aapne keval "# Objective" aur "hi" likha hai, jo angrezi mein hai. Kripaya mujhe vah hindi paath dijiye jise aap roman lipi mein anuvad karana chahte hain, aur main aapki sahayata karne ki puri koshish karunga.
