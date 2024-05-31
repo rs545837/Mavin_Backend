@@ -1,8 +1,8 @@
-# Project Overview: Research Report Automation on WhatsApp
+# Project Overview: Research Report Automation on WhatsApp Along with Multimodal Functionality (MAVIN)
 
 ## Introduction
 
-Welcome to the Research Report Automation project! This project aims to simplify and automate the process of generating comprehensive research reports based on user queries through WhatsApp. By leveraging the capabilities of various sub-agents and orchestration models, the system provides detailed, accurate, and user-friendly research reports in PDF format, delivered directly to users on WhatsApp.
+Welcome to the Research Report Automation project! This project aims to simplify and automate the process of generating comprehensive research reports based on user queries through WhatsApp. By leveraging the capabilities of various sub-agents and orchestration models, the system provides detailed, accurate, and user-friendly research reports in PDF format, delivered directly to users on WhatsApp. Additionally, the project is incorporating multimodal functionality to enhance user experience and interaction.
 
 ## Features
 
@@ -11,6 +11,7 @@ Welcome to the Research Report Automation project! This project aims to simplify
 - **Text and Audio Processing**: The system can process both text and audio inputs to generate comprehensive reports.
 - **Multilingual Support**: Reports can be generated in different languages, including Hindi and Hinglish (Hindi written in Roman script).
 - **Cloud Integration**: The project utilizes cloud services for storing and sharing the generated PDFs, ensuring easy access and distribution.
+- **Multimodal Functionality**: Integrates various modes of communication and data processing, including text, audio, and potentially visual inputs, for a richer user experience.
 
 ## How It Works
 
@@ -67,7 +68,8 @@ Welcome to the Research Report Automation project! This project aims to simplify
 - **Enhanced Audio Features**: Incorporate more advanced audio processing capabilities.
 - **Additional Language Support**: Expand the range of supported languages.
 - **Improved Orchestration**: Optimize the orchestration process for faster and more accurate report generation.
+- **Visual Data Integration**: Incorporate visual data processing to support image and video inputs.
 
 ## Conclusion
 
-This project aims to streamline the process of generating detailed research reports by leveraging advanced text and audio processing techniques, multilingual support, and seamless integration with WhatsApp. We hope this tool enhances your research capabilities and makes information more accessible and easier to share.
+This project aims to streamline the process of generating detailed research reports by leveraging advanced text and audio processing techniques, multilingual support, and seamless integration with WhatsApp. The inclusion of multimodal functionality enhances user interaction, making the tool more versatile and user-friendly. We hope this tool enhances your research capabilities and makes information more accessible and easier to share.
