@@ -23,29 +23,30 @@ pypandoc.download_pandoc()
 TAVILY_API_KEY = os.environ['TAVILY_API_KEY']
 CLAUDE_API_KEY = os.environ['CLAUDE_API_KEY']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-# Set up the Anthropic API client
-# client = Anthropic(api_key=CLAUDE_API_KEY)
+GROQ_API_KEY = os.environ['GROQ_API_KEY']
 
-# Available Claude models:
-# Claude 3 Opus	    claude-3-opus-20240229
-# Claude 3 Sonnet	claude-3-sonnet-20240229
-# Claude 3 Haiku	claude-3-haiku-20240307
+# Set up the GROQ API client
+# Set up the Groq API client
+from groq import Groq
+import os
 
-# ORCHESTRATOR_MODEL = "claude-3-opus-20240229"
-# SUB_AGENT_MODEL = "claude-3-sonnet-20240229"
-# REFINER_MODEL = "claude-3-opus-20240229"
+client = Groq(api_key=GROQ_API_KEY)
 
 # Initialize OpenAI and Anthropic API clients
-openai_client = OpenAI(
-    api_key='sk-proj-z6nTeK9M8lsGAxVJo4HBT3BlbkFJltjH4OzuJYRn7gnNw8x2')
+openai_client = OpenAI()
 anthropic_client = Anthropic(api_key=CLAUDE_API_KEY)
 
 # Available OpenAI models
 ORCHESTRATOR_MODEL = "gpt-4o"
-SUB_AGENT_MODEL = "gpt-4o"
+SUB_AGENT_MODEL = "llama3-70b-8192"
 
 # Available Claude models for Anthropic API
 REFINER_MODEL = "claude-3-opus-20240229"
+
+# Define constants for the script
+CHUNK_SIZE = 1024  # Size of chunks to read/write at a time
+XI_API_KEY = "fe63b0a68ae7c10e5c97ca6ca03a24b7"  # Your API key for authentication
+VOICE_ID = "zyz0WAi2EB3lPpxsZWNY"  # ID of the voice model to use
 
 
 def extract_text_from_pdf(pdf_url):
@@ -66,37 +67,15 @@ def extract_text_from_pdf(pdf_url):
         return None
 
 
-def generate_audio_from_text(text):
-    response = openai_client.audio.speech.create(model="tts-1-hd",
-                                                 voice="alloy",
-                                                 input=text)
-    print(f"Audio Generated:")
-    audio_file_path = datetime.now().strftime(
-        "%Y%m%d_%H%M%S") + "audiobook.mp3"
-    with open(audio_file_path, 'wb') as audio_file:
-        audio_file.write(response.content)
-    # Upload the audio file to a storage service and return the URL
-    # For example, using Google Cloud Storage or AWS S3
-    audiobook_url = upload_audio_to_gcs(
-        "this-is-goat", audio_file_path,
-        audio_file_path)  # Define this function based on your storage service
-
-    return audiobook_url
-
-
 # def generate_audio_from_text(text):
-#     client = ElevenLabs(api_key=os.environ['ELEVEN_LABS'])
-
-#     audio = client.generate(text=text,
-#                             voice="Rachel",
-#                             model="eleven_multilingual_v2")
-
-#     print("Audio Generated.")
+#     response = openai_client.audio.speech.create(model="tts-1-hd",
+#                                                  voice="alloy",
+#                                                  input=text)
+#     print(f"Audio Generated:")
 #     audio_file_path = datetime.now().strftime(
-#         "%Y%m%d_%H%M%S") + "_audiobook.mp3"
-
-#     save(audio, audio_file_path)
-
+#         "%Y%m%d_%H%M%S") + "audiobook.mp3"
+#     with open(audio_file_path, 'wb') as audio_file:
+#         audio_file.write(response.content)
 #     # Upload the audio file to a storage service and return the URL
 #     # For example, using Google Cloud Storage or AWS S3
 #     audiobook_url = upload_audio_to_gcs(
@@ -104,6 +83,50 @@ def generate_audio_from_text(text):
 #         audio_file_path)  # Define this function based on your storage service
 
 #     return audiobook_url
+
+
+def generate_audio_from_text(text):
+    # Construct the URL for the Text-to-Speech API request
+    tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
+
+    # Set up headers for the API request, including the API key for authentication
+    headers = {"Accept": "application/json", "xi-api-key": XI_API_KEY}
+
+    # Set up the data payload for the API request, including the text and voice settings
+    data = {
+        "text": text,
+        "model_id": "eleven_multilingual_v1",
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.8,
+            "style": 0.0,
+            "use_speaker_boost": True
+        }
+    }
+
+    # Make the POST request to the TTS API with headers and data, enabling streaming response
+    response = requests.post(tts_url, headers=headers, json=data, stream=True)
+
+    # Check if the request was successful
+    if response.ok:
+        print("Audio Generated:")
+        audio_file_path = datetime.now().strftime(
+            "%Y%m%d_%H%M%S") + "_audiobook.mp3"
+
+        # Open the output file in write-binary mode
+        with open(audio_file_path, "wb") as audio_file:
+            # Read the response in chunks and write to the file
+            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+                audio_file.write(chunk)
+
+        # Upload the audio file to a storage service and return the URL
+        # For example, using Google Cloud Storage or AWS S3
+        audiobook_url = upload_audio_to_gcs("this-is-goat", audio_file_path,
+                                            audio_file_path)
+        return audiobook_url
+    else:
+        print("Error generating audio:", response.text)
+        return None
 
 
 def translate_md_to_hinglish(md_file_path, translated_md_file_path):
@@ -202,218 +225,6 @@ def calculate_subagent_cost(model, input_tokens, output_tokens):
 
 # Initialize the Rich Console
 console = Console()
-
-# def opus_orchestrator(objective,
-#                       file_content=None,
-#                       previous_results=None,
-#                       use_search=False):
-#     console.print(f"\n[bold]Calling Orchestrator for your objective[/bold]")
-#     previous_results_text = "\n".join(
-#         previous_results) if previous_results else "None"
-#     if file_content:
-#         console.print(
-#             Panel(f"File content:\n{file_content}",
-#                   title="[bold blue]File Content[/bold blue]",
-#                   title_align="left",
-#                   border_style="blue"))
-
-#     messages = [{
-#         "role":
-#         "user",
-#         "content": [{
-#             "type":
-#             "text",
-#             "text":
-#             f"Based on the following objective{' and file content' if file_content else ''}, and the previous sub-task results (if any), please break down the objective into the next sub-task, and create a concise and detailed prompt for a subagent so it can execute that task. IMPORTANT!!! when dealing with code tasks make sure you check the code for errors and provide fixes and support as part of the next sub-task. If you find any bugs or have suggestions for better code, please include them in the next sub-task prompt. Please assess if the objective has been fully achieved. If the previous sub-task results comprehensively address all aspects of the objective, include the phrase 'The task is complete:' at the beginning of your response. If the objective is not yet fully achieved, break it down into the next sub-task and create a concise and detailed prompt for a subagent to execute that task.:\n\nObjective: {objective}"
-#             + ('\\nFile content:\\n' + file_content if file_content else '') +
-#             f"\n\nPrevious sub-task results:\n{previous_results_text}"
-#         }]
-#     }]
-#     if use_search:
-#         messages[0]["content"].append({
-#             "type":
-#             "text",
-#             "text":
-#             "Please also generate a JSON object containing a single 'search_query' key, which represents a question that, when asked online, would yield important information for solving the subtask. The question should be specific and targeted to elicit the most relevant and helpful resources. Format your JSON like this, with no additional text before or after:\n{\"search_query\": \"<question>\"}\n"
-#         })
-
-#     opus_response = client.messages.create(model=ORCHESTRATOR_MODEL,
-#                                            max_tokens=4096,
-#                                            messages=messages)
-
-#     response_text = opus_response.content[0].text
-#     console.print(
-#         f"Input Tokens: {opus_response.usage.input_tokens}, Output Tokens: {opus_response.usage.output_tokens}"
-#     )
-#     total_cost = calculate_subagent_cost(ORCHESTRATOR_MODEL,
-#                                          opus_response.usage.input_tokens,
-#                                          opus_response.usage.output_tokens)
-#     console.print(f"Orchestrator Cost: ${total_cost:.4f}")
-
-#     search_query = None
-#     if use_search:
-#         # Extract the JSON from the response
-#         json_match = re.search(r'{.*}', response_text, re.DOTALL)
-#         if json_match:
-#             json_string = json_match.group()
-#             try:
-#                 search_query = json.loads(json_string)["search_query"]
-#                 console.print(
-#                     Panel(f"Search Query: {search_query}",
-#                           title="[bold blue]Search Query[/bold blue]",
-#                           title_align="left",
-#                           border_style="blue"))
-#                 response_text = response_text.replace(json_string, "").strip()
-#             except json.JSONDecodeError as e:
-#                 console.print(
-#                     Panel(f"Error parsing JSON: {e}",
-#                           title="[bold red]JSON Parsing Error[/bold red]",
-#                           title_align="left",
-#                           border_style="red"))
-#                 console.print(
-#                     Panel(
-#                         f"Skipping search query extraction.",
-#                         title=
-#                         "[bold yellow]Search Query Extraction Skipped[/bold yellow]",
-#                         title_align="left",
-#                         border_style="yellow"))
-#         else:
-#             search_query = None
-
-#     console.print(
-#         Panel(response_text,
-#               title=f"[bold green]Opus Orchestrator[/bold green]",
-#               title_align="left",
-#               border_style="green",
-#               subtitle="Sending task to Haiku 👇"))
-#     return response_text, file_content, search_query
-
-# def haiku_sub_agent(prompt,
-#                     search_query=None,
-#                     previous_haiku_tasks=None,
-#                     use_search=False,
-#                     continuation=False):
-#     if previous_haiku_tasks is None:
-#         previous_haiku_tasks = []
-
-#     continuation_prompt = "Continuing from the previous answer, please complete the response."
-#     system_message = "Previous Haiku tasks:\n" + "\n".join(
-#         f"Task: {task['task']}\nResult: {task['result']}"
-#         for task in previous_haiku_tasks)
-#     if continuation:
-#         prompt = continuation_prompt
-
-#     qna_response = None
-#     if search_query and use_search:
-#         # Initialize the Tavily client
-#         tavily = TavilyClient(api_key=TAVILY_API_KEY)
-#         # Perform a QnA search based on the search query
-#         qna_response = tavily.qna_search(query=search_query)
-#         console.print(f"QnA response: {qna_response}", style="yellow")
-
-#     # Prepare the messages array with only the prompt initially
-#     messages = [{
-#         "role": "user",
-#         "content": [{
-#             "type": "text",
-#             "text": prompt
-#         }]
-#     }]
-
-#     # Add search results to the messages if there are any
-#     if qna_response:
-#         messages[0]["content"].append({
-#             "type":
-#             "text",
-#             "text":
-#             f"\nSearch Results:\n{qna_response}"
-#         })
-
-#     haiku_response = client.messages.create(model=SUB_AGENT_MODEL,
-#                                             max_tokens=4096,
-#                                             messages=messages,
-#                                             system=system_message)
-
-#     response_text = haiku_response.content[0].text
-#     console.print(
-#         f"Input Tokens: {haiku_response.usage.input_tokens}, Output Tokens: {haiku_response.usage.output_tokens}"
-#     )
-#     total_cost = calculate_subagent_cost(SUB_AGENT_MODEL,
-#                                          haiku_response.usage.input_tokens,
-#                                          haiku_response.usage.output_tokens)
-#     console.print(f"Sub-agent Cost: ${total_cost:.4f}")
-
-#     if haiku_response.usage.output_tokens >= 4000:  # Threshold set to 4000 as a precaution
-#         console.print(
-#             "[bold yellow]Warning:[/bold yellow] Output may be truncated. Attempting to continue the response."
-#         )
-#         continuation_response_text = haiku_sub_agent(prompt,
-#                                                      search_query,
-#                                                      previous_haiku_tasks,
-#                                                      use_search,
-#                                                      continuation=True)
-#         response_text += continuation_response_text
-
-#     console.print(
-#         Panel(response_text,
-#               title="[bold blue]Haiku Sub-agent Result[/bold blue]",
-#               title_align="left",
-#               border_style="blue",
-#               subtitle="Task completed, sending result to Opus 👇"))
-#     return response_text
-
-# def opus_refine(objective,
-#                 sub_task_results,
-#                 filename,
-#                 projectname,
-#                 continuation=False):
-#     print(
-#         "\nCalling Opus to provide the refined final output for your objective:"
-#     )
-#     messages = [{
-#         "role":
-#         "user",
-#         "content": [{
-#             "type":
-#             "text",
-#             "text":
-#             "Objective: " + objective + "\n\nSub-task results:\n" +
-#             "\n".join(sub_task_results) +
-#             "\n\nPlease review and refine the sub-task results into a cohesive final output. Add any missing information or details as needed. When working on code projects, ONLY AND ONLY IF THE PROJECT IS CLEARLY A CODING ONE please provide the following:\n1. Project Name: Create a concise and appropriate project name that fits the project based on what it's creating. The project name should be no more than 20 characters long.\n2. Folder Structure: Provide the folder structure as a valid JSON object, where each key represents a folder or file, and nested keys represent subfolders. Use null values for files. Ensure the JSON is properly formatted without any syntax errors. Please make sure all keys are enclosed in double quotes, and ensure objects are correctly encapsulated with braces, separating items with commas as necessary.\nWrap the JSON object in <folder_structure> tags.\n3. Code Files: For each code file, include ONLY the file name NEVER EVER USE THE FILE PATH OR ANY OTHER FORMATTING YOU ONLY USE THE FOLLOWING format 'Filename: <filename>' followed by the code block enclosed in triple backticks, with the language identifier after the opening backticks, like this:\n\n​python\n<code>\n​"
-#         }]
-#     }]
-
-#     opus_response = client.messages.create(model=REFINER_MODEL,
-#                                            max_tokens=4096,
-#                                            messages=messages)
-
-#     response_text = opus_response.content[0].text.strip()
-#     console.print(
-#         f"Input Tokens: {opus_response.usage.input_tokens}, Output Tokens: {opus_response.usage.output_tokens}"
-#     )
-#     total_cost = calculate_subagent_cost(REFINER_MODEL,
-#                                          opus_response.usage.input_tokens,
-#                                          opus_response.usage.output_tokens)
-#     console.print(f"Refine Cost: ${total_cost:.4f}")
-
-#     if opus_response.usage.output_tokens >= 4000 and not continuation:  # Threshold set to 4000 as a precaution
-#         console.print(
-#             "[bold yellow]Warning:[/bold yellow] Output may be truncated. Attempting to continue the response."
-#         )
-#         continuation_response_text = opus_refine(objective,
-#                                                  sub_task_results +
-#                                                  [response_text],
-#                                                  filename,
-#                                                  projectname,
-#                                                  continuation=True)
-#         response_text += "\n" + continuation_response_text
-
-#     console.print(
-#         Panel(response_text,
-#               title="[bold green]Final Output[/bold green]",
-#               title_align="left",
-#               border_style="green"))
-#     return response_text
 
 
 def gpt_orchestrator(objective,
@@ -533,9 +344,11 @@ def gpt_sub_agent(prompt,
             "content": f"\nSearch Results:\n{qna_response}"
         })
 
-    gpt_response = openai_client.chat.completions.create(model=SUB_AGENT_MODEL,
-                                                         messages=messages,
-                                                         max_tokens=4096)
+    gpt_response = client.chat.completions.create(
+        model=SUB_AGENT_MODEL,
+        messages=messages,
+        max_tokens=8000
+    )
 
     response_text = gpt_response.choices[0].message.content
     usage = gpt_response.usage
@@ -774,7 +587,43 @@ def generate_pdf(objective, use_search, language_preference):
 
     filename = f"{timestamp}_{truncated_objective}.md"
 
-    # Prepare the full exchange log
+    # Remove JSON code from the refined output
+    refined_output_without_json = re.sub(
+        r'<folder_structure>.*?</folder_structure>',
+        '',
+        refined_output,
+        flags=re.DOTALL)
+
+    # Extract the refined final output text without the heading
+    refined_final_output_text = re.sub(r'^## Refined Final Output\n\n',
+                                       '',
+                                       refined_output_without_json,
+                                       flags=re.MULTILINE)
+    # Extract the refined final output text without the heading
+    refined_final_output_text = re.sub(r'^## Refined Final Output\n\n',
+                                       '',
+                                       refined_output_without_json,
+                                       flags=re.MULTILINE)
+
+    # Translate refined_final_output_text if language preference is Hinglish
+    if language_preference == 'hinglish':
+        context = [{
+            "role":
+            "user",
+            "content": [{
+                "type":
+                "text",
+                "text":
+                f"Please translate the following Hindi text to Hindi Roman font. Change everything to hinglish except the headings. Remember while us mai instead of main, karu instead of karun while writing hinglish text.:\n\n{refined_final_output_text}"
+            }]
+        }]
+
+        haiku_response = anthropic_client.messages.create(model=REFINER_MODEL,
+                                                          max_tokens=4096,
+                                                          messages=context)
+        refined_final_output_text = haiku_response.content[0].text.strip()
+
+    # Prepare the full exchange log without JSON code
     exchange_log = f"# Objective\n\n{objective}\n\n"
     exchange_log += "## Task Breakdown\n\n"
     for i, (prompt, result) in enumerate(task_exchanges, start=1):
@@ -783,7 +632,7 @@ def generate_pdf(objective, use_search, language_preference):
         exchange_log += f"**Result:**\n{result}\n\n"
         exchange_log += "---\n\n"
     exchange_log += "## Refined Final Output\n\n"
-    exchange_log += refined_output
+    exchange_log += refined_output_without_json
 
     console.print(f"\n[bold]Refined Final output:[/bold]\n{refined_output}")
 
@@ -807,4 +656,4 @@ def generate_pdf(objective, use_search, language_preference):
     pdf_url = pdf_filename
     public_url = upload_pdf_to_gcs("this-is-goat", pdf_url, pdf_filename)
     print(f"\nPDF file saved as {pdf_url}")
-    return public_url
+    return public_url, refined_final_output_text
