@@ -45,8 +45,8 @@ REFINER_MODEL = "claude-3-opus-20240229"
 
 # Define constants for the script
 CHUNK_SIZE = 1024  # Size of chunks to read/write at a time
-XI_API_KEY = "fe63b0a68ae7c10e5c97ca6ca03a24b7"  # Your API key for authentication
-VOICE_ID = "zyz0WAi2EB3lPpxsZWNY"  # ID of the voice model to use
+XI_API_KEY =   # Your API key for authentication
+VOICE_ID =   # ID of the voice model to use
 
 
 def extract_text_from_pdf(pdf_url):
