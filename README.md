@@ -1,4 +1,4 @@
-# Project Overview: Research Report Automation on WhatsApp Along with Multimodal Functionality (MAVIN)
+# Project Overview: Multimodal Automated Virtual Information Network (MAVIN)
 
 ## Introduction
 
