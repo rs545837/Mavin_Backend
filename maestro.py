@@ -17,6 +17,14 @@ import requests
 import io, random, string
 from elevenlabs.client import ElevenLabs
 from elevenlabs import play, stream, save
+from io import BytesIO
+from PIL import Image
+import soundfile as sf
+import uuid
+from twilio.rest import Client
+import agentops
+
+agentops.init('YOUR_API_KEY')
 
 pypandoc.download_pandoc()
 
@@ -33,7 +41,8 @@ import os
 client = Groq(api_key=GROQ_API_KEY)
 
 # Initialize OpenAI and Anthropic API clients
-openai_client = OpenAI()
+openai_client = OpenAI(
+    api_key='')
 anthropic_client = Anthropic(api_key=CLAUDE_API_KEY)
 
 # Available OpenAI models
@@ -45,8 +54,69 @@ REFINER_MODEL = "claude-3-opus-20240229"
 
 # Define constants for the script
 CHUNK_SIZE = 1024  # Size of chunks to read/write at a time
-XI_API_KEY =   # Your API key for authentication
-VOICE_ID =   # ID of the voice model to use
+XI_API_KEY = "fe63b0a68ae7c10e5c97ca6ca03a24b7"  # Your API key for authentication
+VOICE_ID = "zyz0WAi2EB3lPpxsZWNY"  # ID of the voice model to use
+
+account_sid = os.getenv('TWILIO_SID')
+auth_token = os.getenv('TWILIO_TOKEN')
+
+
+def transcript_audio(media_url: str) -> dict:
+    try:
+        ogg_file_path = f'{os.getcwd()}/{uuid.uuid1()}.ogg'
+        response = requests.get(media_url, auth=(account_sid, auth_token))
+
+        if response.status_code == 200:
+            with open(ogg_file_path, 'wb') as file:
+                file.write(response.content)
+
+            audio_data, sample_rate = sf.read(ogg_file_path)
+            mp3_file_path = f'{os.getcwd()}/{uuid.uuid1()}.mp3'
+            sf.write(mp3_file_path, audio_data, sample_rate)
+
+            with open(mp3_file_path, 'rb') as audio_file:
+                transcript_response = openai_client.audio.transcriptions.create(
+                    model="whisper-1", file=audio_file)
+            print(transcript_response)
+            transcript_text = transcript_response.text
+            print(transcript_text)
+            os.unlink(ogg_file_path)
+            os.unlink(mp3_file_path)
+
+            return {'status': 1, 'transcript': transcript_text}
+        else:
+            return {'status': 0, 'error': 'Failed to download audio file'}
+    except Exception as e:
+        print('Error at transcript_audio...')
+        print(e)
+        return {'status': 0, 'transcript': transcript['text']}
+
+
+def generate_image(objective):
+
+    # Read the image file from disk and resize it
+    image = Image.open("image.png")
+    width, height = 1024, 576  # Landscape dimensions (example)
+    image = image.resize((width, height))
+
+    # Convert the image to a BytesIO object
+    byte_stream = BytesIO()
+    image.save(byte_stream, format='PNG')
+    byte_array = byte_stream.getvalue()
+
+    response = openai_client.images.create_variation(image=byte_array,
+                                                     n=1,
+                                                     model="dall-e-2",
+                                                     size="1024,1024")
+
+    # Return the URL of the generated image
+    return response['data'][0]['url']
+
+
+def download_image(image_url, image_filename):
+    response = requests.get(image_url)
+    with open(image_filename, 'wb') as file:
+        file.write(response.content)
 
 
 def extract_text_from_pdf(pdf_url):
@@ -344,11 +414,9 @@ def gpt_sub_agent(prompt,
             "content": f"\nSearch Results:\n{qna_response}"
         })
 
-    gpt_response = client.chat.completions.create(
-        model=SUB_AGENT_MODEL,
-        messages=messages,
-        max_tokens=8000
-    )
+    gpt_response = client.chat.completions.create(model=SUB_AGENT_MODEL,
+                                                  messages=messages,
+                                                  max_tokens=8000)
 
     response_text = gpt_response.choices[0].message.content
     usage = gpt_response.usage
@@ -624,6 +692,15 @@ def generate_pdf(objective, use_search, language_preference):
         refined_final_output_text = haiku_response.content[0].text.strip()
 
     # Prepare the full exchange log without JSON code
+    # # Generate an image related to the topic using the OpenAI API
+    # image_url = generate_image(objective)
+
+    # # Download the image and save it to a file
+    # image_filename = f"{timestamp}_{truncated_objective}.jpg"
+    # download_image(image_url, image_filename)
+
+    # # Add the image to the beginning of the Markdown content
+    # exchange_log = f"![{objective}]({image_filename})\n\n" + exchange_log
     exchange_log = f"# Objective\n\n{objective}\n\n"
     exchange_log += "## Task Breakdown\n\n"
     for i, (prompt, result) in enumerate(task_exchanges, start=1):
